@@ -8,6 +8,9 @@
         <blog-aside></blog-aside>
       </aside>
       <el-main class="blog_main">
+        <div :class="{search_tip:true,search_tip_show:!!$store.state.searchText}">
+          <p v-show="$store.state.searchText">"<span class="word">{{$store.state.searchText}}</span>" 的搜索结果</p>
+        </div>
         <notelist></notelist>
       </el-main>
     </el-container>
@@ -26,40 +29,7 @@ import BlogAside from '../components/Aside.vue'
     BlogAside: BlogAside
   }
 })
-export default class Index extends Vue {
-  private chkLogin() {
-    this.$http({
-      method: 'get',
-      url: this.$store.state.check_url,
-      headers: {
-        Authorization: this.$store.state.token
-      }
-    })
-      .then((res) => {
-        if (!res.data.error) {
-          console.log('login success')
-          this.$store.commit('loginState', true)
-          this.$store.commit('saveUserInfo', res.data)
-          // tianjia zhushi
-        } else {
-          this.$store.commit('loginState', false)
-          console.log('need login')
-        }
-      })
-      .catch((err) => {
-        console.log(err.response)
-        this.$store.commit('loginState', false)
-        if (err.response.status === 403) {
-          console.log('403')
-        }
-      })
-  }
-  private goLogin() {
-    this.$router.push({
-      name: 'login'
-    })
-  }
-}
+export default class Index extends Vue {}
 </script>
 
 <style lang="less" scoped>
@@ -88,15 +58,32 @@ export default class Index extends Vue {
     .blog_main {
       flex: 1;
       padding: 15px 15px 0 25px;
-      box-shadow: -1px 1px 2px #ddd;
+      border-left: 1px solid #ddd;
       background: #f8f8f8;
+      .search_tip {
+        height: 0;
+        transition: all 0.3s;
+        overflow: hidden;
+        box-sizing: content-box;
+        p {
+          text-align: center;
+          .word {
+            font-weight: bold;
+            color: #178bf1;
+            font-size: 1.2em;
+          }
+        }
+      }
+      .search_tip_show {
+        height: 45px;
+      }
     }
   }
 }
 
 @media screen and (max-width: 500px) {
   .blog_left {
-    width: 120px!important;
+    width: 120px !important;
   }
 }
 </style>

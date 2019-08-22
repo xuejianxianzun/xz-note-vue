@@ -5,4 +5,7 @@
 </template>
 
 <style lang="less">
+#app{
+  margin:0 auto;
+}
 </style>

@@ -11,10 +11,15 @@ Vue.use(Element_UI)
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false
 
+Vue.prototype.changeData = function() {
+  // changeData是函数名
+  alert('执行成功')
+}
+
 // axios 拦截器
 axios.interceptors.request.use(
   (request) => {
-    request.headers.Authorization = store.state.token
+    request.headers.Authorization = sessionStorage.getItem('xz-token')
     // 再发送给后台
     return request
   },
@@ -24,23 +29,18 @@ axios.interceptors.request.use(
   }
 )
 // 拦截返回
-axios.interceptors.response.use(
-  (response) => {
-    return response
-  },
-  function(error) {
-    console.log(error.response)
-    if (
-      error.response.status == 500 &&
-      error.response.data.message === 'jwt expired'
-    ) {
-      // token 过期，需要重新登陆
-      Element_UI.Message('登陆已过期，需要重新登陆。')
-      router.push({ name: 'login' })
-    }
-    return Promise.reject(error)
-  }
-)
+// 现在实际上没有起什么作用
+// axios.interceptors.response.use(
+//   (response) => {
+//     return response
+//   },
+//   function(error) {
+//     if (!error.response) {
+//       return error
+//     }
+//     // return Promise.reject(error)
+//   }
+// )
 
 new Vue({
   router,

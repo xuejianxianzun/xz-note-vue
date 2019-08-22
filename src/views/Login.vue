@@ -6,20 +6,23 @@
         <el-form
           class="login_form"
           :model="formData"
-          label-width="80px"
+          :rules="rules"
+          ref="loginform"
+          label-width="100px"
           size="medium"
           @submit.native.prevent
         >
-          <el-form-item label="用户名：">
+          <el-form-item label="用户名：" prop="user">
             <el-input
               placeholder="请输入用户名"
               v-model="formData.user"
               maxlength="30"
               show-word-limit
               required
+              autofocus
             ></el-input>
           </el-form-item>
-          <el-form-item label="密码：">
+          <el-form-item label="密码：" prop="pwd">
             <el-input
               placeholder="请输入密码"
               v-model="formData.pwd"
@@ -29,25 +32,13 @@
               required
             ></el-input>
           </el-form-item>
-          <!-- <el-form-item label="邮箱：">
-            <el-input
-              placeholder="请输入邮箱地址"
-              v-model="formData.email"
-              maxlength="50"
-              required
-            ></el-input>
-          </el-form-item> -->
           <el-form-item>
-            <el-checkbox v-model="formData.agree">同意使用协议</el-checkbox>
-          </el-form-item>
-          <el-form-item>
-            <el-button
-              type="primary"
-              @click="checkForm"
-              native-type="submit"
-            >提交</el-button>
+            <el-button type="primary" @click="checkForm" native-type="submit"
+              >提交</el-button
+            >
             <el-button @click="goback()">返回</el-button>
           </el-form-item>
+          <Tip1 :tipText="tipText"></Tip1>
         </el-form>
       </div>
     </div>
@@ -56,52 +47,73 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
-@Component
+import { checkLogin, showTip1 } from '../Util'
+import Tip1 from '../components/Tip1.vue'
+@Component({
+  components: {
+    Tip1: Tip1
+  }
+})
 export default class Login extends Vue {
+  private tipText: string = '用户名或密码错误'
   private formData = {
     user: '',
-    pwd: '',
-    agree: true
+    pwd: ''
   }
+
+  private rules = {
+    user: [
+      { required: true, message: '请输入用户名', trigger: 'blur' },
+      {
+        min: 3,
+        max: 30,
+        message: '长度必须在 3 到 30 个字符之间',
+        trigger: 'blur'
+      }
+    ],
+    pwd: [
+      { required: true, message: '请输入密码', trigger: 'blur' },
+      {
+        min: 6,
+        max: 30,
+        message: '长度必须在 6 到 30 个字符之间',
+        trigger: 'blur'
+      }
+    ]
+  }
+
   private checkForm() {
-    if (!this.formData.user || !this.formData.pwd || !this.formData.agree) {
-      console.log('false')
-      return false
-    } else {
-      this.login()
-    }
+    this.$refs.loginform.validate((valid: any) => {
+      if (valid) {
+        this.login()
+      } else {
+        return false
+      }
+    })
   }
+
   private async login() {
-    this.$http({
+    const cfg = {
       method: 'post',
-      url: this.$store.state.login_url,
+      url: 'http://localhost:3000/api/v2/login',
       data: {
         user: this.formData.user,
         pwd: this.formData.pwd
       }
-    })
-      .then((res) => {
-        console.log(res.data)
-        const data = res.data
-        if (!data.error) {
-          // save token
-          this.$store.commit('saveToken', data.body.token)
-          this.$store.commit(
-            'loginState',
-            Object.assign(data.body.userinfo, data.err)
-          )
-          this.$router.push({
-            name: 'index'
-          })
-        }
-      })
-      .catch((err) => {
-        console.log(err)
-        this.$store.commit('loginState', { error: true })
-      })
+    }
+    const responseData = await checkLogin(this, cfg, 'index')
+    // 登陆出错
+    if (responseData.error) {
+      showTip1()
+    }
   }
+
   private goback() {
-    window.history.back()
+    // window.history.back()
+    // 正常情况下有两种方式进入登陆页面： index 和 user 。在未登录状态时， user 页面会自动进入登录页，所以不能再退回 user 页面，否则会出不去了。
+    this.$router.push({
+      name: 'index'
+    })
   }
 }
 </script>

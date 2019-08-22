@@ -1,3 +1,5 @@
+const fs = require('fs')
+const path = require('path')
 // https://koajs.com/
 const Koa = require('koa')
 // koa-router 路由，注意require('koa-router')返回的是函数:
@@ -12,19 +14,13 @@ const cros = require('koa2-cors')
 // https://www.npmjs.com/package/jsonwebtoken
 const jwt = require('jsonwebtoken')
 const serect = 'xjxz-vue-note-xjxz' // 密钥
+// 引入 bcrypt.js
+// https://github.com/dcodeIO/bcrypt.js
+const bcrypt = require('bcryptjs')
 // 引入 mysql-pro
-// https://npm.taobao.org/package/mysql-pro
+// https://github.com/shhhplus/mysql-promise
 const MysqlPro = require('mysql-pro')
-const DBConfig = {
-  // 数据库配置信息
-  mysql: {
-    host: 'localhost',
-    port: 3306,
-    database: 'note',
-    user: 'root',
-    password: 'root'
-  }
-}
+const DBConfig = require('./DBConfig')
 
 // 创建 app
 const app = new Koa()
@@ -33,7 +29,7 @@ const app = new Koa()
 app.use(
   cros({
     origin: function(ctx) {
-      // if (ctx.url === '/login') {
+      // if (ctx.url === '/api/v2/user/profile/avatar') {
       //   return '*' // 允许来自所有域名请求
       // }
       return 'http://localhost:8080'
@@ -46,11 +42,13 @@ app.use(
   })
 )
 
-// 创建 token
-function createToken(userinfo) {
-  const token = jwt.sign(userinfo, serect, { expiresIn: '1h' })
-  return token
-}
+// 对所有请求都执行的中间层
+app.use(async (ctx, next) => {
+  await next()
+  ctx.response.type = 'application/json'
+})
+app.use(bodyParser())
+app.use(router.routes())
 
 // 验证 token
 async function checkToken(ctx) {
@@ -62,25 +60,15 @@ async function checkToken(ctx) {
       if (err) {
         // 验证 token 出错，一般是过期 'jwt expired'
         console.log(err)
-        ctx.status = 500
+        ctx.status = 403
         ctx.response.body = {
           error: true,
-          message: err.message,
+          message: 'jwt expired',
           body: []
         }
         return false
       } else {
         // 验证 token 成功
-        // 验证要操作的 uid 是否是用户自己的 uid
-        if (Number.parseInt(ctx.params.uid) !== data.id) {
-          ctx.status = 403
-          ctx.response.body = {
-            error: true,
-            message: 'HTTP 403 Forbidden',
-            body: []
-          }
-          return false
-        }
         return data
       }
     })
@@ -98,21 +86,91 @@ async function checkToken(ctx) {
   }
 }
 
-// 对所有请求都执行的中间层
-app.use(async (ctx, next) => {
-  await next()
-  ctx.response.type = 'application/json'
-})
-app.use(bodyParser())
-app.use(router.routes())
+// 登陆成功后返回的信息，参数为该用户的数据库查询结果
+function loginSuccess(ctx, res) {
+  const userinfo = {
+    id: res.id,
+    user: res.uname,
+    avatar: res.avatar,
+    email: res.email
+  }
+  ctx.status = 200
+  ctx.response.body = {
+    error: false,
+    message: '200 Ok',
+    body: {
+      token: jwt.sign(userinfo, serect, { expiresIn: '1h' }),
+      userinfo: userinfo
+    }
+  }
+}
 
-// 用户登陆
-router.post('/login', async (ctx, next) => {
+// 验证已存在的 token
+router.get('/api/v2/user/profile/all', async (ctx, next) => {
+  let rst = await checkToken(ctx)
+  console.log(rst)
+
+  if (!rst) {
+    return false
+  }
+
   let body = ctx.request.body
   let DB = new MysqlPro(DBConfig)
-  await DB.query(
-    `select * from users where uname='${body.user}' and pwd='${body.pwd}'`
-  ).then(
+  await DB.query(`select * from users where id='${rst.id}'`).then((res) => {
+    res = JSON.parse(JSON.stringify(res))
+    if (res.length > 0) {
+      res = res[0]
+      loginSuccess(ctx, res)
+    } else {
+      ctx.status = 401
+      ctx.response.body = {
+        error: true,
+        message: 'no such user',
+        body: []
+      }
+    }
+  })
+})
+
+// 用户注册
+router.post('/api/v2/register', async (ctx, next) => {
+  let body = ctx.request.body
+  let DB = new MysqlPro(DBConfig)
+  let res = await DB.query(`select * from users where uname='${body.user}'`)
+  // 如果结果为空，返回值是一个空数组 []
+  res = JSON.parse(JSON.stringify(res))
+  console.log(res)
+  if (res.length > 0) {
+    // 已经有这个用户了
+    ctx.status = 200
+    ctx.response.body = {
+      error: true,
+      message: 'user exists',
+      body: []
+    }
+  } else {
+    // 加密密码
+    let salt = bcrypt.genSaltSync(10)
+    let hash = bcrypt.hashSync(body.pwd, salt)
+    // 添加新用户
+    await DB.query(
+      `insert into users (uname,pwd,email) values ('${
+        body.user
+      }', '${hash}', '${body.email}')`
+    )
+    // 返回登陆成功的数据
+    let res = await DB.query(`select * from users where uname='${body.user}'`)
+    res = JSON.parse(JSON.stringify(res))
+    res = res[0]
+    loginSuccess(ctx, res)
+  }
+})
+
+// 用户登陆
+router.post('/api/v2/login', async (ctx, next) => {
+  let body = ctx.request.body
+  let DB = new MysqlPro(DBConfig)
+  await DB.query(`select * from users where uname='${body.user}'`).then(
     (res) => {
       // 如果结果为空，返回值是一个空数组 []
       // [ RowDataPacket { id: 1, uname: 'saber', pwd: '123', avatar: 'default' } ]
@@ -121,25 +179,25 @@ router.post('/login', async (ctx, next) => {
       // [ { id: 1, uname: 'saber', pwd: '123', avatar: 'default' } ]
       if (res.length > 0) {
         res = res[0]
-        const userinfo = {
-          id: res.id,
-          user: res.uname,
-          avatar: res.avatar
-        }
-        ctx.status = 200
-        ctx.response.body = {
-          error: false,
-          message: '200 Ok',
-          body: {
-            token: createToken(userinfo),
-            userinfo: userinfo
+        // 验证密码
+        let result = bcrypt.compareSync(body.pwd, res.pwd)
+        if (!result) {
+          // 验证失败
+          ctx.status = 401
+          ctx.response.body = {
+            error: true,
+            message: 'pwd check failed',
+            body: []
           }
+        } else {
+          // 返回登陆成功的信息，携带 token
+          loginSuccess(ctx, res)
         }
       } else {
         ctx.status = 401
         ctx.response.body = {
           error: true,
-          message: '401 Unauthorized',
+          message: 'no such user',
           body: []
         }
       }
@@ -157,16 +215,15 @@ router.post('/login', async (ctx, next) => {
 })
 
 // 获取所有笔记
-router.get('/user/:uid/notes/all', async (ctx, next) => {
+router.get('/api/v2/notes/all', async (ctx, next) => {
   let rst = await checkToken(ctx)
   if (!rst) {
     return false
   }
+
   // 验证通过
   let DB = new MysqlPro(DBConfig)
-  let res = await DB.query(
-    `select * from notes where userid='${ctx.params.uid}'`
-  )
+  let res = await DB.query(`select * from notes where userid='${rst.id}'`)
   res = JSON.parse(JSON.stringify(res))
   console.log(res)
   ctx.status = 200
@@ -180,7 +237,7 @@ router.get('/user/:uid/notes/all', async (ctx, next) => {
 })
 
 // 新增笔记
-router.post('/user/:uid/notes', async (ctx, next) => {
+router.post('/api/v2/notes', async (ctx, next) => {
   let rst = await checkToken(ctx)
   if (!rst) {
     return false
@@ -188,7 +245,7 @@ router.post('/user/:uid/notes', async (ctx, next) => {
   // 验证通过
   let DB = new MysqlPro(DBConfig)
   let res = await DB.query(
-    `insert into notes (userid, content, time) values ('${ctx.params.uid}', '${
+    `insert into notes (userid, content, time) values ('${rst.id}', '${
       ctx.request.body.content
     }','${new Date().getTime()}')`
   )
@@ -202,7 +259,7 @@ router.post('/user/:uid/notes', async (ctx, next) => {
 })
 
 // 删除笔记
-router.delete('/user/:uid/notes/:noteid', async (ctx, next) => {
+router.delete('/api/v2/notes/:noteid', async (ctx, next) => {
   let rst = await checkToken(ctx)
   if (!rst) {
     return false
@@ -210,9 +267,9 @@ router.delete('/user/:uid/notes/:noteid', async (ctx, next) => {
   // 验证通过
   let DB = new MysqlPro(DBConfig)
   let res = await DB.query(
-    `delete from notes where id=${ctx.params.noteid} and userid=${
-      ctx.params.uid
-    }`
+    `delete from notes where id=${Number.parseInt(
+      ctx.params.noteid
+    )} and userid=${rst.id}`
   )
   console.log(res)
   ctx.status = 204
@@ -224,12 +281,12 @@ router.delete('/user/:uid/notes/:noteid', async (ctx, next) => {
 })
 
 // 修改笔记
-router.patch('/user/:uid/notes/:noteid/:field', async (ctx, next) => {
+router.patch('/api/v2/notes/:noteid/:field', async (ctx, next) => {
   // 只允许修改这些字段
   if (ctx.params.field !== 'content' && ctx.params.field !== 'tag') {
     ctx.status = 403
     ctx.response.body = {
-      error: false,
+      error: true,
       message: '403 this field can not be edit',
       body: []
     }
@@ -244,9 +301,9 @@ router.patch('/user/:uid/notes/:noteid/:field', async (ctx, next) => {
   let res = await DB.query(
     `update notes set ${ctx.params.field}='${
       ctx.request.body[ctx.params.field]
-    }',time='${new Date().getTime()}' where id=${ctx.params.noteid} and userid=${
-      ctx.params.uid
-    }`
+    }',time='${new Date().getTime()}' where id=${Number.parseInt(
+      ctx.params.noteid
+    )} and userid=${rst.id}`
   )
   console.log(res)
   ctx.status = 200
@@ -256,6 +313,59 @@ router.patch('/user/:uid/notes/:noteid/:field', async (ctx, next) => {
     body: []
   }
 })
+
+// 修改用户配置
+router.patch('/api/v2/user/profile/:field', async (ctx, next) => {
+  // 只允许修改这些字段
+  // pwd avatar email
+  // 目前只修改了 avatar
+  if (ctx.params.field !== 'avatar') {
+    ctx.status = 403
+    ctx.response.body = {
+      error: true,
+      message: '403 this field can not be edit',
+      body: []
+    }
+    return false
+  }
+  let rst = await checkToken(ctx)
+  if (!rst) {
+    return false
+  }
+  // 验证通过
+  if (ctx.params.field === 'avatar') {
+    updateAvatar(ctx, ctx.request.body.data)
+  }
+})
+
+function updateAvatar(ctx, imgData) {
+  // imgData 是图片的 base64 的 dataurl
+  // 过滤data:URL 标记
+  const base64Data = imgData.replace(/^data:image\/\w+;base64,/, '')
+  const dataBuffer = Buffer.from(base64Data, 'base64')
+  const imgName = new Date().getTime().toString() + '.jpg'
+  const filePath = path.resolve(__dirname, '../public/avatar/', imgName)
+  fs.writeFile(filePath, dataBuffer, function(err) {
+    if (err) {
+      console.log(err)
+    } else {
+      console.log('保存成功！')
+    }
+  })
+  let DB = new MysqlPro(DBConfig)
+  // 数据库中只保存头像的文件名，路径名由前后端约定
+  let res = DB.query(`update users set avatar = '${imgName}'`)
+  ctx.status = 200
+  ctx.response.body = {
+    error: false,
+    message: '200 Ok',
+    body: [
+      {
+        avatar: imgName
+      }
+    ]
+  }
+}
 
 // listen 要放到最后
 app.listen(3000)

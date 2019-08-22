@@ -2,49 +2,56 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 
 Vue.use(Vuex)
-const state:any={
-  server_url: 'http://localhost:3000',
-  login_url: 'http://localhost:3000/login',
-  regist_url: 'http://localhost:3000',
-  check_url: 'http://localhost:3000/check',
-  note_url: 'http://localhost:3000/notes',
-  token: '',
-  user: '',
-  id: 0,
-  avatar: 'default',
-  isLogin: false,
-  allTag: [], // 存储所有已有的 tag
-  showAllTag: 'xznote-all', // 内置的标记，当展示全部 tag 时使用
-  showTag: 'xznote-all', // 要展示的 tag
-  noteData: []
+
+class State {
+  public user: string = ''
+  public id: number = -1
+  public avatar: string = 'default_avatar.jpg'
+  public avatarPath: string = '/avatar/' // public 文件夹不需要写出来
+  public email: string = ''
+  public isLogin: boolean = false
+  public allTag: string[] = [] // 存储所有已有的 tag
+  public showAllTag: string = 'xznote-all' // 内置的标记，当展示全部 tag 时使用
+  public showTag: string = 'xznote-all' // 要展示的 tag
+  public searchText: string = '' // 搜索文本
+  public noteData: object[] = [] // 所有笔记
+  public showAgreement: boolean = false
+  public showTip1: boolean = false
 }
+
 export default new Vuex.Store({
-  state:state,
+  state: new State(),
   mutations: {
-    saveToken(state, token) {
-      state.token = token
+    changeShowTip1(state) {
+      state.showTip1 = !state.showTip1
     },
-    setValue(state, [key, val]: any) {
-      state[key] = val
+    setShowAgreement(state, val) {
+      state.showAgreement = val
+    },
+    setShowTag(state, val) {
+      state.showTag = val
+    },
+    changeAvatar(state, val) {
+      state.avatar = val
     },
     loginState(state, obj) {
       if (!obj.error) {
         state.isLogin = true
         state.user = obj.user
         state.id = obj.id
-        state.avatar = obj.avatar
+        state.avatar = obj.avatar || state.avatar
+        state.email = obj.email
       }
     },
     logout(state) {
-      state.token = ''
-      state.isLogin = false
-      state.user = ''
-      state.id = 0
-      state.avatar = 'default'
-      state.allTag = new Set()
-      state.showTag = 'xznote-all'
-      state.noteData = []
+      // 重置所有状态
+      state = new State()
     }
   },
-  actions: {}
+  actions: {},
+  getters: {
+    getAvatarUrl(state){
+      return state.avatarPath + state.avatar
+    }
+  }
 })

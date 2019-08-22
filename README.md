@@ -1,34 +1,24 @@
-# note
+运行环境：
 
-## Project setup
-```
-npm install
-```
+Node.js + MySQL
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+1. 安装依赖
 
-### Compiles and minifies for production
-```
-npm run build
-```
+`npm install`
 
-### Run your tests
+2. 初始化数据库
+
 ```
-npm run test
+mysql -u root -p
+
+-- 进入 mysql 后导入 sql 文件，如：
+source D:\document\vue\note\koa2\database.sql
 ```
 
-### Lints and fixes files
-```
-npm run lint
-```
+3. 启动 koa2
 
-### Run your unit tests
-```
-npm run test:unit
-```
+`npm run koa`
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+4. 启动 vue-cli 服务
+
+`npm run serve`

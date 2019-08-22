@@ -3,31 +3,16 @@
     <div class="note_list_con">
       <!-- add -->
       <div class="note_item">
-        <div
-          class="add"
-          v-show="!addData.showEdit"
-        >
+        <div class="add" v-show="!addData.showEdit">
           <div class="addbutton">
-            <el-button
-              type="primary"
-              @click="edit(addData)"
-            >+ add</el-button>
+            <el-button type="primary" @click="edit(addData)">+ add</el-button>
           </div>
         </div>
         <div
           class="con"
           v-show="addData.showEdit"
+          :class="{ editing: addData.showEdit === true }"
         >
-          <div class="ctrl editopt">
-            <div
-              class="btn"
-              @click="cancelEdit(addData)"
-            ><i class="el-icon-refresh-right"></i> 取消</div>
-            <div
-              class="btn"
-              @click="checkEdit(addData)"
-            ><i class="el-icon-check"></i> 提交</div>
-          </div>
           <textarea
             class="note_text_editor"
             spellcheck="false"
@@ -35,43 +20,27 @@
             v-focus
             v-model="addData.content"
           ></textarea>
+          <div class="ctrl editopt">
+            <button class="btn" @click="cancelEdit(addData)">
+              <i class="el-icon-refresh-right"></i>&nbsp;取消
+            </button>
+            <button class="btn" @click="checkEdit(addData)">
+              <i class="el-icon-check"></i>&nbsp;提交
+            </button>
+          </div>
         </div>
       </div>
       <!-- list -->
-      <div
-        class="note_item"
-        v-for="item in filteTag"
-        :key="item.id"
-      >
-        <div class="con">
-          <div
-            class="ctrl info"
-            v-show="!showEdit[item.id]"
-          >
-            <div class="time">{{parseDate(item.time)}}</div>
-            <div
-              class="icon"
-              title="设置标签"
-              @click="showEditTag(item)"
-            ><i class="el-icon-price-tag"></i></div>
-            <div
-              class="icon"
-              title="删除笔记"
-              @click="deleteNote(item)"
-            ><i class="el-icon-delete"></i></div>
-          </div>
-          <div
-            class="ctrl editopt"
-            v-show="showEdit[item.id]"
-          >
-            <div
-              class="btn"
-              @click="cancelEdit(item)"
-            ><i class="el-icon-refresh-right"></i> 取消</div>
-            <div
-              class="btn"
-              @click="checkEdit(item)"
-            ><i class="el-icon-check"></i> 提交</div>
+      <div class="note_item" v-for="item in filteNote" :key="item.id">
+        <div class="con" :class="{ editing: showEdit[item.id] === true }">
+          <div class="ctrl info">
+            <div class="time">{{ parseDate(item.time) }}</div>
+            <div class="icon" title="设置标签" @click="showEditTag(item)">
+              <i class="el-icon-price-tag"></i>
+            </div>
+            <div class="icon" title="删除笔记" @click="deleteNote(item)">
+              <i class="el-icon-delete"></i>
+            </div>
           </div>
           <div
             class="note_text"
@@ -87,6 +56,14 @@
             v-if="showEdit[item.id]"
             v-focus
           ></textarea>
+          <div class="ctrl editopt" v-show="showEdit[item.id]">
+            <button class="btn" @click="cancelEdit(item)">
+              <i class="el-icon-refresh-right"></i>&nbsp;取消
+            </button>
+            <button class="btn" @click="checkEdit(item)">
+              <i class="el-icon-check"></i>&nbsp;提交
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -96,15 +73,16 @@
       :visible.sync="dialogSetTag"
     >
       <el-form @submit.native.prevent="addTempTag(inputTag)">
-        <el-form-item
-          label="手动输入标签"
-          label-width="120px"
-        >
+        <el-form-item label="手动输入标签" label-width="120px">
           <el-input
             v-model="inputTag"
             autocomplete="off"
-            width="300px"
+            width="200px"
+            class="input_tag_btn"
           ></el-input>
+          <el-button type="primary" @click="addTempTag(inputTag)"
+            >添加</el-button
+          >
         </el-form-item>
         <el-form-item class="input_tags">
           <el-tag
@@ -114,13 +92,10 @@
             effect="light"
             closable
           >
-            {{tag}}
+            {{ tag }}
           </el-tag>
         </el-form-item>
-        <el-form-item
-          label="选择已有标签"
-          label-width="120px"
-        >
+        <el-form-item label="选择已有标签" label-width="120px">
           <div class="existed_tag">
             <el-tag
               v-for="tag in $store.state.allTag"
@@ -129,28 +104,21 @@
               effect="light"
               class="el_tag"
             >
-              {{tag}}
+              {{ tag }}
             </el-tag>
           </div>
         </el-form-item>
         <div class="tip">
-          <p>您可以手动输入标签名称，输入之后按下回车键生成标签。
-            <br>
-            您也可以选择之前已经建立的标签名称。
-            <br>
-            您可以为每条笔记添加多个标签。
+          <p>
+            您可以手动输入标签，也可以选择已有的标签。
+            <br />
+            每条笔记可以添加多个标签。
           </p>
         </div>
       </el-form>
-      <div
-        slot="footer"
-        class="dialog-footer"
-      >
+      <div slot="footer" class="dialog-footer">
         <el-button @click="cancelEditTag">取 消</el-button>
-        <el-button
-          type="primary"
-          @click="submitEditTag"
-        >确 定</el-button>
+        <el-button type="primary" @click="submitEditTag">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -168,23 +136,27 @@ import { Component, Vue } from 'vue-property-decorator'
     }
   },
   computed: {
-    // 根据要显示的 tag，筛选出结果
-    filteTag() {
+    // 返回符合条件的笔记
+    filteNote() {
+      let rst = []
+      // 筛选 tag
       if (this.$store.state.showTag === this.$store.state.showAllTag) {
-        return this.$store.state.noteData
+        rst = this.$store.state.noteData
       } else {
-        let rst = []
-        for (const note of this.$store.state.noteData) {
-          if (note.decodeTags.includes(this.$store.state.showTag)) {
-            rst.push(note)
-          }
-        }
-        return rst
+        rst = this.$store.state.noteData.filter((note: any) => {
+          return note.decodeTags.includes(this.$store.state.showTag)
+        })
       }
+      // 筛选搜索词
+      rst = rst.filter((note: any) => {
+        return note.content.includes(this.$store.state.searchText)
+      })
+      return rst
     }
   }
 })
 export default class Notelist extends Vue {
+  private token: string = sessionStorage.getItem('xz-token') || ''
   // 新增笔记时，所使用的初始数据
   private addData = {
     isAdd: true,
@@ -205,14 +177,10 @@ export default class Notelist extends Vue {
   }
   // 进入编辑模式
   private edit(data: any) {
-    if (!this.$store.state.isLogin) {
-      this.$alert(
-        '此操作需要您登陆。请登陆或注册用户之后再进行此操作。',
-        '提示',
-        {
-          confirmButtonText: '确定'
-        }
-      )
+    if (!this.token) {
+      this.$alert('请登陆后再添加笔记。', '需要登陆', {
+        confirmButtonText: '确定'
+      })
       return false
     }
     if ('isAdd' in data) {
@@ -279,9 +247,9 @@ export default class Notelist extends Vue {
       1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}`
     // :${d.getSeconds()}
   }
-  // 挂载后获取笔记
-  private mounted() {
-    if (this.$store.state.isLogin) {
+  // 创建后获取笔记
+  private created() {
+    if (this.token) {
       this.getNote()
     }
   }
@@ -289,14 +257,9 @@ export default class Notelist extends Vue {
   private getNote() {
     this.$http({
       method: 'get',
-      url: `http://localhost:3000/user/${this.$store.state.id}/notes/all`
+      url: `http://localhost:3000/api/v2/notes/all`
     })
       .then((res) => {
-        console.log(res.data)
-        // this.$store.commit('setValue', [
-        //   'noteData',
-        //   res.data.body.notes.sort(this.sortByIdDesc)
-        // ])
         let notes = res.data.body.notes
         let allTags = new Set()
         for (let note of notes) {
@@ -310,19 +273,23 @@ export default class Notelist extends Vue {
           // 设置这个笔记的编辑状态
           this.showEdit[note.id] = false
         }
-        // 保存笔记数据到 vuex
+        // 保存所有 tag
         this.$store.state.allTag = [...allTags]
+        // 如果当前 tag 列表里没有要展示的那个 tag（可能是笔记被删除了），则把展示 tag 切换到默认的“展示全部” tag
+        if (!this.$store.state.allTag.includes(this.$store.state.showTag)) {
+          this.$store.commit('setShowTag', this.$store.state.showAllTag)
+        }
         this.$store.state.noteData = res.data.body.notes.sort(this.sortByIdDesc)
       })
-      .catch((err) => {
-        console.log(err)
+      .catch(() => {
+        // console.log(err)
       })
   }
   // 添加笔记
   private addNote(data: any) {
     this.$http({
       method: 'post',
-      url: `http://localhost:3000/user/${this.$store.state.id}/notes/`,
+      url: `http://localhost:3000/api/v2/notes`,
       data: {
         content: data.content
       }
@@ -341,7 +308,7 @@ export default class Notelist extends Vue {
   private deleteNote(data: any) {
     this.$http({
       method: 'delete',
-      url: `http://localhost:3000/user/${this.$store.state.id}/notes/${data.id}`
+      url: `http://localhost:3000/api/v2/notes/${data.id}`
     })
       .then((res) => {
         console.log('删除成功')
@@ -359,7 +326,7 @@ export default class Notelist extends Vue {
     send[type] = data[type]
     this.$http({
       method: 'patch',
-      url: `http://localhost:3000/user/${this.$store.state.id}/notes/${data.id}/${type}`,
+      url: `http://localhost:3000/api/v2/notes/${data.id}/${type}`,
       data: send
     })
       .then((res) => {
@@ -434,7 +401,7 @@ export default class Notelist extends Vue {
     background: #fff;
     border: 1px solid #ddd;
     width: 200px;
-    height: 200px;
+    height: 190px;
     margin: 0 20px 20px 0;
     box-shadow: 0px 1px 3px #eee;
     font-size: 14px;
@@ -445,24 +412,30 @@ export default class Notelist extends Vue {
       height: 100%;
       position: relative;
       overflow: hidden;
-      &:hover {
-        .info {
-          display: flex;
-        }
+      transition: all 0.3s;
+
+      .info {
+        display: flex;
+      }
+      &.editing {
+        height: 250px;
+      }
+      &:hover .ctrl {
+        bottom: 0;
       }
       .ctrl {
         position: absolute;
-        z-index: 2;
+        z-index: 1;
         left: 0;
-        bottom: 0;
         width: 100%;
         height: 36px;
         line-height: 36px;
         color: #fff;
+        transition: all 0.3s;
       }
       .info {
         background: rgba(0, 0, 0, 0.7);
-        display: none;
+        bottom: -36px;
         .time {
           width: 100%;
           font-size: 14px;
@@ -475,34 +448,32 @@ export default class Notelist extends Vue {
           cursor: pointer;
           font-size: 16px;
           padding: 0 10px;
+          transition: all 0.3s;
+          background: rgba(0, 0, 0, 0);
           &:hover {
-            background: rgb(64, 158, 255);
+            background: rgba(64, 158, 255, 1);
           }
         }
       }
       .editopt {
-        background: rgb(64, 158, 255);
         display: flex;
         align-items: center;
+        bottom: 0;
         .btn {
+          border: none;
+          padding: 0;
           width: 50%;
           height: 100%;
           font-size: 14px;
           cursor: pointer;
           text-align: center;
-          &:hover {
-            background: #007acc;
+          background: rgb(64, 158, 255);
+          transition: all 0.3s;
+          color: #fff;
+          &:hover,
+          &:focus {
+            background: #0289e4;
           }
-        }
-        button {
-          height: 60%;
-          font-size: 14px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          padding-top: 0;
-          padding-bottom: 0;
-          width: 36%;
         }
       }
     }
@@ -516,16 +487,20 @@ export default class Notelist extends Vue {
       padding: 8px;
       height: 100%;
       overflow-wrap: break-word;
+      line-height: 1.6;
     }
     .note_text_editor {
+      position: relative;
+      z-index: 1;
       display: inline-block;
       resize: none;
-      height: 100%;
+      height: 214px;
       width: 100%;
       font-size: 14px;
       font-family: '微软雅黑';
       padding: 7px;
-      line-height: 1.5;
+      padding-bottom: 0;
+      line-height: 1.6;
       color: #333;
     }
   }
@@ -536,6 +511,10 @@ export default class Notelist extends Vue {
   }
   .tip {
     color: #999;
+  }
+  .input_tag_btn {
+    width: 220px;
+    margin-right: 10px;
   }
 }
 </style>
@@ -550,6 +529,15 @@ export default class Notelist extends Vue {
   }
   .el-tag {
     margin-right: 10px;
+  }
+  .input_tags {
+    .el-tag {
+      background: #409eff;
+    }
+    *,
+    .el-icon-close {
+      color: #fff;
+    }
   }
 }
 </style>
