@@ -4,7 +4,8 @@ import Index from './views/Index.vue'
 import Login from './views/Login.vue'
 import Register from './views/Register.vue'
 import User from './views/User.vue'
-import ModifyProfile from './views/ModifyProfile.vue'
+import EditUser from './views/EditUser.vue'
+import Found from './views/Found.vue'
 
 Vue.use(Router)
 
@@ -35,12 +36,17 @@ export default new Router({
     {
       path: '/user/email',
       name: 'changeEmail',
-      component: ModifyProfile
+      component: EditUser
     },
     {
-      path: '/user/pwd',
+      path: '/user/password',
       name: 'changePwd',
-      component: ModifyProfile
+      component: EditUser
+    },
+    {
+      path: '/user/foundpwd',
+      name: 'foundPwd',
+      component: Found
     }
   ]
 })

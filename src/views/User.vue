@@ -1,11 +1,7 @@
 <template>
-  <div class="user_page">
-    <div class="nav_wrap"></div>
-    <div class="con_wrap">
-      <h1>用户中心</h1>
-      <div class="nav">
-        <router-link :to="'/'" class="link">&lt; 返回主页</router-link>
-      </div>
+  <UserWrap>
+    <h1 slot="title">用户中心</h1>
+    <div slot="content">
       <div class="avatar user_row">
         <div class="imgwrap">
           <img
@@ -21,17 +17,23 @@
             </div>
           </div>
         </div>
-        <div class="uname blue_link">{{ this.$store.state.user }}</div>
+        <div class="uname blue_link">{{ $store.state.user }}</div>
       </div>
       <div class="user_row">
-        <span class="tit">邮箱：</span>{{ this.$store.state.email }}
+        <span class="tit">密码：已经加密存储。</span>
+        <router-link :to="{ name: 'changePwd' }" class="blue_link"
+          >修改密码</router-link
+        >
+      </div>
+      <div class="user_row">
+        <span class="tit">邮箱：</span>{{ $store.state.email }}
         <router-link :to="{ name: 'changeEmail' }" class="blue_link"
           >修改邮箱</router-link
         >
       </div>
       <div class="user_row note_num">
         <span class="tit">笔记：</span>您有
-        {{ this.$store.state.noteData.length }} 条笔记。
+        {{ $store.state.noteData.length }} 条笔记。
         <a
           href="javascript:void(0)"
           class="blue_link"
@@ -44,46 +46,55 @@
           >查看用户协议</a
         >
       </div>
-    </div>
 
-    <my-upload
-      field="img"
-      @crop-success="cropSuccess"
-      v-model="showAvatarUpload"
-      :width="200"
-      :height="200"
-      img-format="jpg"
-    ></my-upload>
+      <my-upload
+        field="img"
+        @crop-success="cropSuccess"
+        v-model="showAvatarUpload"
+        :width="200"
+        :height="200"
+        img-format="jpg"
+      ></my-upload>
 
-    <Agreenment></Agreenment>
+      <Agreenment></Agreenment>
 
-    <el-dialog class="output_wrap" title="导出笔记" :visible.sync="showOutput">
-      <div class="content">
-        <el-tabs v-model="activeName">
-          <el-tab-pane label="纯文字" name="text">
-            <textarea v-model="outputResultText" class="outputArea"></textarea>
-          </el-tab-pane>
-          <el-tab-pane label="JSON" name="json">
-            <textarea v-model="outputResultJSON" class="outputArea"></textarea>
-          </el-tab-pane>
-        </el-tabs>
-        <div class="close">
-          <el-button type="primary" @click="showOutput = false"
-            >确 定</el-button
-          >
+      <el-dialog
+        class="output_wrap"
+        title="导出笔记"
+        :visible.sync="showOutput"
+      >
+        <div class="content">
+          <el-tabs v-model="activeName">
+            <el-tab-pane label="纯文字" name="text">
+              <textarea
+                v-model="outputResultText"
+                class="outputArea"
+              ></textarea>
+            </el-tab-pane>
+            <el-tab-pane label="JSON" name="json">
+              <textarea
+                v-model="outputResultJSON"
+                class="outputArea"
+              ></textarea>
+            </el-tab-pane>
+          </el-tabs>
+          <div class="close">
+            <el-button type="primary" @click="showOutput = false"
+              >确 定</el-button
+            >
+          </div>
         </div>
-      </div>
-    </el-dialog>
-  </div>
+      </el-dialog>
+    </div>
+  </UserWrap>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
+import { getUserProfiles } from '../Util'
+import UserWrap from '../components/UserWrap.vue'
 import Agreenment from '../components/Agreement.vue'
 import myUpload from 'vue-image-crop-upload/upload-2.vue'
-import Login from './Login.vue'
-import { getUserProfile } from '../Util'
-import '../style/user.less'
 @Component({
   computed: {
     outputResultText() {
@@ -96,6 +107,7 @@ import '../style/user.less'
     }
   },
   components: {
+    UserWrap: UserWrap,
     Agreenment: Agreenment,
     'my-upload': myUpload
   }
@@ -105,48 +117,31 @@ export default class User extends Vue {
   private activeName = 'text'
   private showAvatarUpload = false
 
-  private async beforeCreate() {
-    // 如果未登录，则跳转到登录页
-    if (!sessionStorage.getItem('xz-token')) {
-      this.$router.push({ name: 'login' })
-    }
-    // 获取用户配置信息
-    const responseData = await await getUserProfile(this)
-    if (responseData.error) {
-      // 获取配置信息出错，也跳转到登录页
-      this.$router.push({ name: 'login' })
-    }
-  }
-
+  // 显示头像上传框
   private toggleChangeAvatar() {
     this.showAvatarUpload = !this.showAvatarUpload
   }
 
   // 更新头像
-  private cropSuccess(imageDataUrl: string) {
+  private async cropSuccess(imageDataUrl: string) {
     // console.log(imageDataUrl)
-    this.$http({
+    const cfg = {
       method: 'patch',
       url: `http://localhost:3000/api/v2/user/profile/avatar`,
       data: {
         data: imageDataUrl
       }
-    })
-      .then((res) => {
-        if (!res.data.error) {
-          //  [{avatar: "default"}]
-          this.$store.commit('changeAvatar', res.data.body[0].avatar)
-          this.$message('修改头像成功')
-        } else {
-          this.$message('修改头像失败')
-        }
-      })
-      .catch((err) => {
-        this.$message('修改头像失败')
-        console.log(err)
-      })
+    }
+    const responseData = await getUserProfiles(this, cfg)
+    // 登陆出错
+    if (responseData.error) {
+      this.$message('修改头像失败')
+    } else {
+      this.$message('修改头像成功')
+    }
   }
 
+  // 查看用户协议
   private seeArgee() {
     this.$store.commit('setShowAgreement', true)
   }

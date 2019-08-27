@@ -1,10 +1,10 @@
 <template>
-  <div class="login_page">
-    <div class="wrap">
+  <div class="login_page login_regist_page">
+    <div class="login_regist_wrap">
       <div class="con">
         <h1>用户登录</h1>
         <el-form
-          class="login_form"
+          class="main_form"
           :model="formData"
           :rules="rules"
           ref="loginform"
@@ -32,13 +32,26 @@
               required
             ></el-input>
           </el-form-item>
-          <el-form-item>
+          <el-form-item label="验证码：" prop="verifyCode">
+            <el-input
+              class="verify_input1"
+              placeholder="请输入验证码"
+              v-model="formData.verifyCode"
+            ></el-input>
+            <Verify></Verify>
+          </el-form-item>
+          <router-link :to="{ name: 'foundPwd' }" class="forget"
+            >忘记密码</router-link
+          >
+          <el-form-item class="el_buttons">
             <el-button type="primary" @click="checkForm" native-type="submit"
               >提交</el-button
             >
             <el-button @click="goback()">返回</el-button>
           </el-form-item>
-          <Tip1 :tipText="tipText"></Tip1>
+          <Tip1>
+            <span slot="tipText">{{ tipText }}</span>
+          </Tip1>
         </el-form>
       </div>
     </div>
@@ -47,39 +60,36 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
-import { checkLogin, showTip1 } from '../Util'
+import { getUserProfiles, showTip1, pubRules } from '../Util'
 import Tip1 from '../components/Tip1.vue'
+import Verify from '../components/Verify.vue'
 @Component({
   components: {
-    Tip1: Tip1
+    Tip1,
+    Verify
   }
 })
 export default class Login extends Vue {
   private tipText: string = '用户名或密码错误'
   private formData = {
     user: '',
-    pwd: ''
+    pwd: '',
+    verifyCode: ''
+  }
+
+  private checkVerifyCode1 = (rule: any, value: string, callback: any) => {
+    const code = this.$store.state.verifyCode.toLowerCase()
+    if (!code || !value || code !== value.toLowerCase()) {
+      callback(new Error('验证码错误!'))
+    } else {
+      callback()
+    }
   }
 
   private rules = {
-    user: [
-      { required: true, message: '请输入用户名', trigger: 'blur' },
-      {
-        min: 3,
-        max: 30,
-        message: '长度必须在 3 到 30 个字符之间',
-        trigger: 'blur'
-      }
-    ],
-    pwd: [
-      { required: true, message: '请输入密码', trigger: 'blur' },
-      {
-        min: 6,
-        max: 30,
-        message: '长度必须在 6 到 30 个字符之间',
-        trigger: 'blur'
-      }
-    ]
+    user: pubRules.user,
+    pwd: pubRules.pwd,
+    verifyCode: pubRules.verifyCode
   }
 
   private checkForm() {
@@ -101,7 +111,7 @@ export default class Login extends Vue {
         pwd: this.formData.pwd
       }
     }
-    const responseData = await checkLogin(this, cfg, 'index')
+    const responseData = await getUserProfiles(this, cfg, 'index')
     // 登陆出错
     if (responseData.error) {
       showTip1()
@@ -120,27 +130,15 @@ export default class Login extends Vue {
 
 <style lang="less" scoped>
 .login_page {
-  height: 100vh;
-  position: relative;
-  .wrap {
-    width: 500px;
-    position: absolute;
-    z-index: 1;
-    padding: 30px;
-    border-radius: 10px;
-    border: 1px solid #eee;
-    background: #fff;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    h1 {
-      text-align: center;
-      font-weight: normal;
-      line-height: 1.5;
-    }
-    .login_form {
-      margin-top: 30px;
-    }
+  .login_regist_wrap {
+    height: 430px;
+  }
+  .forget {
+    display: inline-block;
+    font-size: 14px;
+    color: #888;
+    padding-left: 100px;
+    margin-bottom: 20px;
   }
 }
 </style>

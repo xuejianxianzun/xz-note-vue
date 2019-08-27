@@ -7,7 +7,7 @@
     <div class="logined" v-if="$store.state.isLogin">
       <div class="img_wrap menu_item">
         <div class="img_box">
-          <router-link :to="'/user'" title="用户后台">
+          <router-link :to="'/user'" :title="$store.state.user">
             <img
               :src="$store.getters.getAvatarUrl"
               class="avatar_img"
@@ -26,23 +26,23 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator'
-import { getUserProfile } from '../Util'
+import { checkToken } from '../Util'
 @Component({
   computed: {},
   components: {}
 })
 export default class UserMenu extends Vue {
   private logout() {
-    this.$store.commit('logout')
     // 清空 token
     sessionStorage.removeItem('xz-token')
+    window.location.reload()
   }
 
   private test = Vue.prototype.test
 
   private async beforeCreate() {
     // 获取用户配置信息
-    const responseData = await await getUserProfile(this)
+    const responseData = await await checkToken(this)
     // 登陆出错
     if (responseData.error) {
       if (
@@ -82,7 +82,7 @@ export default class UserMenu extends Vue {
       height: 46px;
       border-radius: 50%;
       overflow: hidden;
-      transition: all 0.5s;
+      transition: all 0.3s;
     }
     .img_wrap:hover .img_box {
       transform: scale(1.1);

@@ -1,6 +1,8 @@
 <template>
   <el-form-item class="tip1_wrap">
-    <span class="tip1_con" v-show="$store.state.showTip1">{{ tipText }}</span>
+    <span class="tip1_con" v-show="$store.state.showTip1">
+      <slot name="tipText"></slot>
+    </span>
   </el-form-item>
 </template>
 
@@ -8,7 +10,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator'
 @Component
 export default class Tip1 extends Vue {
-  @Prop(String) tipText!: string
+  // @Prop(String) tipText!: string
 }
 </script>
 

@@ -7,6 +7,8 @@ import 'element-ui/lib/theme-chalk/index.css'
 import './style/common.less'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
+// import Util1 from 'Util1'
+// Vue.use(Util1)
 Vue.use(Element_UI)
 Vue.use(VueAxios, axios)
 Vue.config.productionTip = false

@@ -72,7 +72,7 @@
       title="设置标签"
       :visible.sync="dialogSetTag"
     >
-      <el-form @submit.native.prevent="addTempTag(inputTag)">
+      <el-form @submit.native.prevent>
         <el-form-item label="手动输入标签" label-width="120px">
           <el-input
             v-model="inputTag"

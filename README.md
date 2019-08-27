@@ -9,9 +9,10 @@ Node.js + MySQL
 2. 初始化数据库
 
 ```
+-- 进入 mysql 导入 sql 文件，如：
+
 mysql -u root -p
 
--- 进入 mysql 后导入 sql 文件，如：
 source D:\document\vue\note\koa2\database.sql
 ```
 
@@ -22,3 +23,6 @@ source D:\document\vue\note\koa2\database.sql
 4. 启动 vue-cli 服务
 
 `npm run serve`
+
+---
+

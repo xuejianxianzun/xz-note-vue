@@ -12,19 +12,68 @@ body {
   font: 16px/1.5 '微软雅黑';
 }
 
-div,textarea{
-  box-sizing:border-box;
+div,
+textarea {
+  box-sizing: border-box;
 }
 
-li,ol{
+li,
+ol {
   list-style: none;
 }
 
-a{
+a {
   text-decoration: none;
 }
 
-img{
-  border:none;
+img {
+  border: none;
   max-width: 100%;
+}
+
+.themeColor {
+  color: #409eff;
+}
+
+.el_buttons button {
+  margin-right: 10px;
+}
+
+.verify_input1 {
+  width: 120px !important;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+.login_regist_page {
+  height: 100vh;
+  position: relative;
+  .login_regist_wrap {
+    width: 500px;
+    position: absolute;
+    z-index: 1;
+    padding: 30px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    background: #fff;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    // top: 50%;
+    // left: 50%;
+    // transform: translate(-50%, -50%);
+    // 用 translate 当有元素的尺寸不是整数 px 时会导致内容模糊。
+    h1 {
+      text-align: center;
+      font-weight: normal;
+      line-height: 1.5;
+    }
+    .main_form {
+      margin-top: 30px;
+      .el-form-item{
+        height: 36px;
+      }
+    }
+  }
 }

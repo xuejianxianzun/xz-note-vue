@@ -17,6 +17,7 @@ class State {
   public noteData: object[] = [] // 所有笔记
   public showAgreement: boolean = false
   public showTip1: boolean = false
+  public verifyCode: string = ''
 }
 
 export default new Vuex.Store({
@@ -28,11 +29,14 @@ export default new Vuex.Store({
     setShowAgreement(state, val) {
       state.showAgreement = val
     },
+    setUser(state, val) {
+      state.user = val
+    },
     setShowTag(state, val) {
       state.showTag = val
     },
-    changeAvatar(state, val) {
-      state.avatar = val
+    setVerify(state, val){
+      state.verifyCode = val
     },
     loginState(state, obj) {
       if (!obj.error) {
@@ -42,10 +46,6 @@ export default new Vuex.Store({
         state.avatar = obj.avatar || state.avatar
         state.email = obj.email
       }
-    },
-    logout(state) {
-      // 重置所有状态
-      state = new State()
     }
   },
   actions: {},

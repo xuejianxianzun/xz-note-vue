@@ -57,3 +57,21 @@ http://localhost:3000/api/v2/user/profile/all
 patch
 
 http://localhost:3000/api/v2/user/profile/${field}
+
+## 发送验证码
+
+get
+
+http://localhost:3000/api/v2/user/profile/verification
+
+## 核对验证码
+
+post
+
+http://localhost:3000/api/v2/user/profile/verification
+
+## 找回密码
+
+http://localhost:3000/api/v2/user/profile/found/${user}
+
+## 重置密码
