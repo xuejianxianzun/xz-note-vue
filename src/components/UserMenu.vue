@@ -1,8 +1,8 @@
 <template>
   <div class="user_menu">
     <div class="no_login" v-if="!$store.state.isLogin">
+      <router-link to="/register" class="menu_item">注册</router-link>
       <router-link to="/login" class="menu_item">登陆</router-link>
-      <router-link to="/register">注册</router-link>
     </div>
     <div class="logined" v-if="$store.state.isLogin">
       <div class="img_wrap menu_item">

@@ -475,10 +475,12 @@ function encryEmail(email) {
 // 重设密码前查找用户
 router.get('/api/v2/user/profile/found/:user', async (ctx, next) => {
   // 查找用户
-  let res = await DB.query(
-    `select * from users where name = '${ctx.params.user}'`
-  )
+  let res = await DB.query(`select * from users where name = ?;`, [
+    ctx.params.user
+  ])
   res = JSON.parse(JSON.stringify(res))
+  console.log(res)
+
   if (res.length > 0) {
     res = res[0]
     // 发信

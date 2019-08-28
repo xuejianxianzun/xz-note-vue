@@ -12,7 +12,9 @@
           <p class="tip">
             我们需要向您的邮箱
             <strong class="themeColor">{{ $store.state.email }}</strong>
-            发送一封验证邮件。验证码 10 分钟内有效。
+            发送一封验证邮件。
+            <br />
+            验证码 10 分钟内有效。
           </p>
           <el-button
             type="primary"
@@ -20,15 +22,13 @@
             @click="sendVerification"
             >{{ btn1Text }}</el-button
           >
-          <span class="sendStatus">{{ sendStatus }}</span>
-        </div>
-        <div class="step_con" v-if="active === 1">
-          <p class="tip">
+          <p class="sendStatus">{{ sendStatus }}</p>
+          <p class="tip" v-show="showInputVerify">
             请输入您在邮箱中收到的验证码。
             <br />
             如果您未收到邮件，请检查邮件是否在垃圾箱里。
           </p>
-          <div class="input_verify_wrap">
+          <div class="dib" v-show="showInputVerify">
             <el-form
               class="verify_form"
               size="medium"
@@ -40,21 +40,23 @@
               <el-form-item prop="verifyEmail">
                 <el-input
                   class="verify_input"
-                  autofocus
                   v-model="inputVerify.verifyEmail"
                   placeholder="请输入验证码"
                 ></el-input>
-                <el-button type="primary" @click="checkVerify()"
+                <el-button
+                  type="primary"
+                  native-type="submit"
+                  @click="checkVerify()"
                   >提交验证码</el-button
                 >
-                <span class="sendStatus">{{ sendStatus }}</span>
               </el-form-item>
             </el-form>
           </div>
+          <p class="sendStatus">{{ sendStatus2 }}</p>
         </div>
-        <div class="step_con" v-if="active === 2">
+        <div class="step_con" v-if="active === 1">
           <p class="tip">请输入您的新{{ fieldTip }}。</p>
-          <div class="input_new_wrap">
+          <div class="input_new_wrap dib">
             <el-form
               class="new_form"
               size="medium"
@@ -71,15 +73,17 @@
                   :placeholder="'请输入新的' + fieldTip"
                   :type="inputType"
                 ></el-input>
-                <el-button type="primary" @click="checkForm()"
+                <el-button
+                  type="primary"
+                  @click="checkForm()"
+                  native-type="submit"
                   >修改{{ fieldTip }}</el-button
                 >
-                <span class="sendStatus">{{ sendStatus }}</span>
               </el-form-item>
             </el-form>
           </div>
         </div>
-        <div class="step_con" v-if="active === 3">
+        <div class="step_con tac" v-if="active === 2">
           <p class="tip">您的{{ fieldTip }}已经修改成功！</p>
           <div class="back">
             <el-button type="primary" @click="back()">返回</el-button>
@@ -106,6 +110,7 @@ export default class EditUser extends Vue {
   private stepTitle: string[] = []
   private active: number = 0
   private disableBtn1: boolean = false
+  private showInputVerify: boolean = false
   private btn1Time: number = 60
   private btn1Text: string = '发送验证码'
   private inputType: string = ''
@@ -114,6 +119,8 @@ export default class EditUser extends Vue {
     disabled: ' 秒后可以重新发送'
   }
   private sendStatus: string = ''
+  private sendStatus2: string = ''
+
   private inputVerify: { verifyEmail: string } = {
     verifyEmail: ''
   }
@@ -145,12 +152,7 @@ export default class EditUser extends Vue {
       this.inputType = 'password'
       this.rules2 = { val: this.rulesAll.pwd }
     }
-    this.stepTitle = [
-      '发送验证码',
-      '输入验证码',
-      `修改${this.fieldTip}`,
-      '修改成功'
-    ]
+    this.stepTitle = ['验证邮箱', `修改${this.fieldTip}`, '完成修改']
   }
 
   // 发送验证码
@@ -161,8 +163,8 @@ export default class EditUser extends Vue {
       url: 'http://localhost:3000/api/v2/user/profile/verification'
     })
       .then((res) => {
-        this.sendStatus = '发送成功'
-        this.next()
+        this.sendStatus = '发送成功！'
+        this.showInputVerify = true
       })
       .catch((err) => {
         console.log(err)
@@ -210,14 +212,12 @@ export default class EditUser extends Vue {
       }
     })
       .then((res) => {
-        console.log(res.data)
-        this.sendStatus = '验证码正确'
         this.next()
         this.inputVerify.verifyEmail = ''
       })
       .catch((err) => {
         console.log(err)
-        this.sendStatus = '验证码不正确！'
+        this.sendStatus2 = '验证码不正确！'
       })
   }
 
@@ -255,7 +255,7 @@ export default class EditUser extends Vue {
 
   // 下一步
   private next() {
-    if (this.active++ > 3) this.active = 0
+    if (this.active++ > 2) this.active = 0
   }
 
   private back() {
@@ -271,15 +271,25 @@ export default class EditUser extends Vue {
     width: 90%;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 30px;
+    margin-top: 40px;
     font-size: 14px;
     color: #444;
+    text-align: center;
+    .tac {
+      text-align: center;
+    }
+    .dib {
+      display: inline-block;
+    }
     .tip {
-      color: #666;
+      text-align: center;
+      color: #555;
+      font-size: 16px;
+      line-height: 1.8;
       margin-bottom: 15px;
     }
     .sendStatus {
-      padding-left: 20px;
+      margin: 20px auto;
     }
     .verify_input {
       width: 150px;

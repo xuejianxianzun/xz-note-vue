@@ -295,7 +295,6 @@ export default class Notelist extends Vue {
       }
     })
       .then((res) => {
-        console.log(res.data)
         data.content = ''
         this.$message('添加成功')
         this.getNote()
@@ -330,7 +329,6 @@ export default class Notelist extends Vue {
       data: send
     })
       .then((res) => {
-        console.log(res.data)
         this.$message('更新成功')
         this.getNote()
       })
