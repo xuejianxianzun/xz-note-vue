@@ -2,10 +2,10 @@ import axios from 'axios'
 import store from './store'
 
 // 获取、更新用户数据的请求都可以走这里。会返回新的 token 用来更新前台的用户信息
-// 登陆，注册，获取用户配置，检查登陆状态，修改用户资料。
+// 登录，注册，获取用户配置，检查登录状态，修改用户资料。
 // 参数 cfg 是网络请求参数， routerName 是成功后要跳转的路由 name
 export const getUserProfiles = async function(
-  thiz: any,
+  this: any,
   cfg: any,
   routerName?: string
 ) {
@@ -13,13 +13,15 @@ export const getUserProfiles = async function(
     const res = await axios(cfg)
     const data = res.data
     if (!data.error) {
-      // 保存 token
-      sessionStorage.setItem('xz-token', data.body.token)
-      // 保存用户资料
+      if(data.body.token){
+        // 保存 token
+        sessionStorage.setItem('xz-token', data.body.token)
+      }
+      // 保存用户信息料
       store.commit('loginState', Object.assign(data.body.userinfo, data.err))
-      // 如有必要可以进行跳转
+      // 跳转
       if (routerName) {
-        thiz.$router.push({
+        this.$router.push({
           name: routerName
         })
       }
@@ -41,13 +43,13 @@ export const getUserProfiles = async function(
 }
 
 // 如果存在 token 信息，则尝试获取用户信息。如果成功会获得新的 token
-export const checkToken = async function(thiz: any) {
+export const checkToken = async function() {
   if (sessionStorage.getItem('xz-token') && !store.state.isLogin) {
     const cfg = {
       method: 'get',
-      url: 'http://localhost:3000/api/v2/user/profile/all'
+      url: `${store.state.apiPath}/user/profile/all`
     }
-    return await getUserProfiles(thiz, cfg)
+    return await getUserProfiles(cfg)
   } else {
     // 没有 token 信息，不尝试获取。
     return Promise.resolve({})

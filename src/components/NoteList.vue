@@ -67,6 +67,7 @@
         </div>
       </div>
     </div>
+    <!-- dialog -->
     <el-dialog
       class="dialog_set_tag"
       title="设置标签"
@@ -76,11 +77,16 @@
         <el-form-item label="手动输入标签" label-width="120px">
           <el-input
             v-model="inputTag"
+            autofocus
             autocomplete="off"
             width="200px"
-            class="input_tag_btn"
+            class="input_tag"
+            id="input_tag"
           ></el-input>
-          <el-button type="primary" @click="addTempTag(inputTag)"
+          <el-button
+            type="primary"
+            native-type="submit"
+            @click="addTempTag(inputTag)"
             >添加</el-button
           >
         </el-form-item>
@@ -178,7 +184,7 @@ export default class Notelist extends Vue {
   // 进入编辑模式
   private edit(data: any) {
     if (!this.token) {
-      this.$alert('请登陆后再添加笔记。', '需要登陆', {
+      this.$alert('请登录后再添加笔记。', '需要登录', {
         confirmButtonText: '确定'
       })
       return false
@@ -245,7 +251,6 @@ export default class Notelist extends Vue {
     const d = new Date(Number.parseInt(time))
     return `${d.getFullYear()}-${d.getMonth() +
       1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}`
-    // :${d.getSeconds()}
   }
   // 创建后获取笔记
   private created() {
@@ -257,7 +262,7 @@ export default class Notelist extends Vue {
   private getNote() {
     this.$http({
       method: 'get',
-      url: `http://localhost:3000/api/v2/notes/all`
+      url: `${this.$store.state.apiPath}/notes/all`
     })
       .then((res) => {
         let notes = res.data.body.notes
@@ -289,7 +294,7 @@ export default class Notelist extends Vue {
   private addNote(data: any) {
     this.$http({
       method: 'post',
-      url: `http://localhost:3000/api/v2/notes`,
+      url: `${this.$store.state.apiPath}/notes`,
       data: {
         content: data.content
       }
@@ -307,10 +312,9 @@ export default class Notelist extends Vue {
   private deleteNote(data: any) {
     this.$http({
       method: 'delete',
-      url: `http://localhost:3000/api/v2/notes/${data.id}`
+      url: `${this.$store.state.apiPath}/notes/${data.id}`
     })
       .then((res) => {
-        console.log('删除成功')
         this.$message('删除成功')
         this.getNote()
       })
@@ -325,7 +329,7 @@ export default class Notelist extends Vue {
     send[type] = data[type]
     this.$http({
       method: 'patch',
-      url: `http://localhost:3000/api/v2/notes/${data.id}/${type}`,
+      url: `${this.$store.state.apiPath}/notes/${data.id}/${type}`,
       data: send
     })
       .then((res) => {
@@ -340,6 +344,10 @@ export default class Notelist extends Vue {
   // 设置 tag
   private showEditTag(item: any) {
     this.dialogSetTag = true
+    const inputTag = document.querySelector('#input_tag') as HTMLInputElement
+    if (inputTag) {
+      inputTag.focus()
+    }
     // 如果这个笔记有 tag，则添加到临时 tag 列表里
     this.tempTags = this.decodeTag(item.tag)
     this.setTageId = item.id
@@ -352,7 +360,7 @@ export default class Notelist extends Vue {
       return tag.split(',')
     }
   }
-  // 关闭设置 tag 的对话框
+  // 关闭设置 tag 的对话框，重设一些变量
   private cancelEditTag() {
     this.dialogSetTag = false
     this.setTageId = 0
@@ -374,7 +382,7 @@ export default class Notelist extends Vue {
   private removeTempTag(tag: string) {
     this.tempTags.splice(this.tempTags.indexOf(tag), 1)
   }
-  // 准备提交当前笔记的 tag
+  // 更新当前笔记的 tag
   private submitEditTag() {
     this.dialogSetTag = false
     if (this.tempTags.length > 0) {
@@ -510,7 +518,7 @@ export default class Notelist extends Vue {
   .tip {
     color: #999;
   }
-  .input_tag_btn {
+  .input_tag {
     width: 220px;
     margin-right: 10px;
   }
@@ -530,7 +538,7 @@ export default class Notelist extends Vue {
   }
   .input_tags {
     .el-tag {
-      background: #409eff;
+      background: #5bacff;
     }
     *,
     .el-icon-close {

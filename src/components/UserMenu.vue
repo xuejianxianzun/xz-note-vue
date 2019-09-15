@@ -2,7 +2,7 @@
   <div class="user_menu">
     <div class="no_login" v-if="!$store.state.isLogin">
       <router-link to="/register" class="menu_item">注册</router-link>
-      <router-link to="/login" class="menu_item">登陆</router-link>
+      <router-link to="/login" class="menu_item">登录</router-link>
     </div>
     <div class="logined" v-if="$store.state.isLogin">
       <div class="img_wrap menu_item">
@@ -19,7 +19,7 @@
       <div class="user_name menu_item">
         <router-link :to="'/user'" title="用户后台">后台</router-link>
       </div>
-      <div class="logout" @click="logout" title="退出登陆">登出</div>
+      <div class="logout" @click="logout" title="退出登录">登出</div>
     </div>
   </div>
 </template>
@@ -42,16 +42,16 @@ export default class UserMenu extends Vue {
 
   private async beforeCreate() {
     // 获取用户配置信息
-    const responseData = await await checkToken(this)
-    // 登陆出错
+    const responseData = await await checkToken()
+    // 登录出错
     if (responseData.error) {
       if (
         responseData.status === 403 &&
         responseData.data.message === 'jwt expired'
       ) {
-        // token 过期，需要重新登陆
-        // Element_UI.Message('登陆已过期，需要重新登陆。')
-        console.log('登陆已过期，需要重新登陆。')
+        // token 过期，需要重新登录
+        // Element_UI.Message('登录已过期，需要重新登录。')
+        console.log('登录已过期，需要重新登录。')
       }
     }
   }

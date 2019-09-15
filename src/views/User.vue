@@ -97,19 +97,21 @@ import Agreenment from '../components/Agreement.vue'
 import myUpload from 'vue-image-crop-upload/upload-2.vue'
 @Component({
   computed: {
+    // 导出笔记时输出纯文字
     outputResultText() {
       return this.$store.state.noteData.reduce((total: string, curr: any) => {
         return (total += curr.content + '\n\n')
       }, '')
     },
+    // 导出笔记时输出 JSON 字符串
     outputResultJSON() {
       return JSON.stringify(this.$store.state.noteData)
     }
   },
   components: {
-    UserWrap: UserWrap,
-    Agreenment: Agreenment,
-    'my-upload': myUpload
+    UserWrap,
+    Agreenment,
+    myUpload
   }
 })
 export default class User extends Vue {
@@ -124,20 +126,31 @@ export default class User extends Vue {
 
   // 更新头像
   private async cropSuccess(imageDataUrl: string) {
-    // console.log(imageDataUrl)
     const cfg = {
       method: 'patch',
-      url: `http://localhost:3000/api/v2/user/profile/avatar`,
+      url: `${this.$store.state.apiPath}/user/profile/avatar`,
       data: {
         data: imageDataUrl
       }
     }
-    const responseData = await getUserProfiles(this, cfg)
-    // 登陆出错
+    const responseData = await getUserProfiles.call(this, cfg)
+    // 登录出错
     if (responseData.error) {
       this.$message('修改头像失败')
     } else {
       this.$message('修改头像成功')
+    }
+  }
+
+  // 如果没有笔记，则获取所有笔记。主要是当用户直接刷新 user 页面时需要获取。
+  private created() {
+    if (this.$store.state.noteData.length === 0) {
+      this.$http({
+        method: 'get',
+        url: `${this.$store.state.apiPath}/notes/all`
+      }).then((res) => {
+        this.$store.state.noteData = res.data.body.notes
+      })
     }
   }
 

@@ -24,9 +24,9 @@ import Notelist from '../components/NoteList.vue'
 import BlogAside from '../components/Aside.vue'
 @Component({
   components: {
-    BlogHeader: BlogHeader,
-    Notelist: Notelist,
-    BlogAside: BlogAside
+    BlogHeader,
+    Notelist,
+    BlogAside
   }
 })
 export default class Index extends Vue {}

@@ -9,9 +9,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator'
 @Component
-export default class Tip1 extends Vue {
-  // @Prop(String) tipText!: string
-}
+export default class Tip1 extends Vue {}
 </script>
 
 <style lang="less" scoped>

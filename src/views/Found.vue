@@ -108,7 +108,7 @@
             </div>
             <div class="step3" v-show="step === 2">
               <p class="found_tip">
-                重置密码成功！请使用新密码登陆。
+                重置密码成功！请使用新密码登录。
               </p>
               <div class="btn_wrap">
                 <el-button type="primary" @click="goback()">返回</el-button>
@@ -140,20 +140,25 @@ export default class Found extends Vue {
   private disableBtn1: boolean = false
   private stepTitle: string[] = ['验证用户名', `重置密码`, '完成修改']
 
+  // 验证用户名时的表单数据
   private foundFormData = {
     user: '',
     verifyCode: ''
   }
 
+  // 验证用户名时的验证规则
   private rules = {
     user: pubRules.user,
     verifyCode: pubRules.verifyCode
   }
 
+  // 输入新密码的表单的数据
   private rpFormData = {
     verifyCode: '',
     pwd: ''
   }
+
+  // 输入新密码的表单的验证规则
   private rules2 = {
     pwd: pubRules.pwd,
     verifyCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
@@ -162,7 +167,7 @@ export default class Found extends Vue {
   // 修改时检查输入的值
   private checkForm() {
     if (this.step === 0) {
-      this.$refs.found_form.validate((valid: any) => {
+      ;(this.$refs.found_form as any).validate((valid: any) => {
         if (valid) {
           this.found()
         } else {
@@ -170,7 +175,7 @@ export default class Found extends Vue {
         }
       })
     } else {
-      this.$refs.rp_form.validate((valid: any) => {
+      ;(this.$refs.rp_form as any).validate((valid: any) => {
         if (valid) {
           this.resetPwd()
         } else {
@@ -185,7 +190,7 @@ export default class Found extends Vue {
     this.disableBtn1 = true
     this.$http({
       method: 'get',
-      url: `http://localhost:3000/api/v2/user/profile/found/${this.foundFormData.user}`
+      url: `${this.$store.state.apiPath}/user/profile/found/${this.foundFormData.user}`
     })
       .then((res) => {
         // 发信成功
@@ -214,7 +219,7 @@ export default class Found extends Vue {
     this.disableBtn1 = true
     this.$http({
       method: 'post',
-      url: `http://localhost:3000/api/v2/user/profile/pwd`,
+      url: `${this.$store.state.apiPath}/user/profile/pwd`,
       data: {
         user: this.$store.state.user,
         verifyCode: this.rpFormData.verifyCode,
@@ -233,6 +238,7 @@ export default class Found extends Vue {
       })
   }
 
+  // 返回登陆页面
   private goback() {
     this.$router.push({
       name: 'login'
@@ -242,7 +248,7 @@ export default class Found extends Vue {
 </script>
 
 <style lang="less" scoped>
-.found_con_wrap{
+.found_con_wrap {
   margin-top: 30px;
 }
 .step_con_wrap {
@@ -265,7 +271,7 @@ export default class Found extends Vue {
   .found_form {
     padding: 30px;
     width: 420px;
-    margin:0 auto;
+    margin: 0 auto;
   }
   .found_form .new_input {
     max-width: 250px;

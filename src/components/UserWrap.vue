@@ -26,8 +26,8 @@ export default class UserWrap extends Vue {
         this.$router.push({ name: 'login' })
       }
       // 如果有 token，根据该 token 获取用户配置信息
-      const responseData = await await checkToken(this)
-      // 获取配置信息出错，跳转到登录页
+      const responseData = await await checkToken()
+      // 如果获取配置信息出错，则跳转到登录页
       if (responseData.error) {
         this.$router.push({ name: 'login' })
       }

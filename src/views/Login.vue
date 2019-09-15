@@ -70,30 +70,26 @@ import Verify from '../components/Verify.vue'
   }
 })
 export default class Login extends Vue {
+  // 提示文本
   private tipText: string = '用户名或密码错误'
+
+  // 表单数据
   private formData = {
     user: '',
     pwd: '',
     verifyCode: ''
   }
 
-  private checkVerifyCode1 = (rule: any, value: string, callback: any) => {
-    const code = this.$store.state.verifyCode.toLowerCase()
-    if (!code || !value || code !== value.toLowerCase()) {
-      callback(new Error('验证码错误!'))
-    } else {
-      callback()
-    }
-  }
-
+  // 验证规则
   private rules = {
     user: pubRules.user,
     pwd: pubRules.pwd,
     verifyCode: pubRules.verifyCode
   }
 
+  // 验证表单
   private checkForm() {
-    this.$refs.loginform.validate((valid: any) => {
+    ;(this.$refs.loginform as any).validate((valid: any) => {
       if (valid) {
         this.login()
       } else {
@@ -102,25 +98,28 @@ export default class Login extends Vue {
     })
   }
 
+  // 登录
   private async login() {
     const cfg = {
       method: 'post',
-      url: 'http://localhost:3000/api/v2/login',
+      url: `${this.$store.state.apiPath}/login`,
       data: {
         user: this.formData.user,
         pwd: this.formData.pwd
       }
     }
-    const responseData = await getUserProfiles(this, cfg, 'index')
-    // 登陆出错
+    const responseData = await getUserProfiles.call(this, cfg, 'index')
+
+    // 登录出错
     if (responseData.error) {
       showTip1()
     }
   }
 
+  // 返回首页
   private goback() {
     // window.history.back()
-    // 正常情况下有两种方式进入登陆页面： index 和 user 。在未登录状态时， user 页面会自动进入登录页，所以不能再退回 user 页面，否则会出不去了。
+    // 正常情况下有两种方式进入登录页面： index 和 user 。在未登录状态时， user 页面会自动进入登录页，所以不能再退回 user 页面，否则会无法回到主页。
     this.$router.push({
       name: 'index'
     })

@@ -1,12 +1,12 @@
 <template>
   <span class="img-verify">
+    <!-- https://github.com/luguanrui/vue-img-verify -->
     <canvas
       ref="verify"
       :width="width"
       :height="height"
       @click="handleDraw"
     ></canvas>
-    <!-- https://github.com/luguanrui/vue-img-verify -->
   </span>
 </template>
 
@@ -14,7 +14,7 @@
 import { Component, Vue } from 'vue-property-decorator'
 @Component
 export default class Verify extends Vue {
-  private pool: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890' // 字符串
+  private pool: string = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789' // 字符串，去掉了 O 和 0
   private width: number = 120
   private height: number = 30
   private imgCode: string = ''
@@ -43,7 +43,7 @@ export default class Verify extends Vue {
   // 绘制图片
   private draw() {
     // 3.填充背景颜色，背景颜色要浅一点
-    const ctx = this.$refs.verify.getContext('2d')
+    const ctx = (this.$refs.verify as HTMLCanvasElement).getContext('2d')!
     // 填充颜色
     ctx.fillStyle = this.randomColor(180, 230)
     // 填充的位置

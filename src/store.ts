@@ -3,7 +3,25 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex)
 
-class State {
+interface StateInterface {
+  user: string
+  id: number
+  avatar: string
+  avatarPath: string
+  email: string
+  isLogin: boolean
+  allTag: string[]
+  showAllTag: string
+  showTag: string
+  searchText: string
+  noteData: object[]
+  showAgreement: boolean
+  showTip1: boolean
+  verifyCode: string
+  apiPath:string
+}
+
+class State implements StateInterface {
   public user: string = ''
   public id: number = -1
   public avatar: string = 'default_avatar.jpg'
@@ -18,6 +36,7 @@ class State {
   public showAgreement: boolean = false
   public showTip1: boolean = false
   public verifyCode: string = ''
+  public apiPath:string = 'http://localhost:3000/api/v2'
 }
 
 export default new Vuex.Store({
@@ -26,16 +45,16 @@ export default new Vuex.Store({
     changeShowTip1(state) {
       state.showTip1 = !state.showTip1
     },
-    setShowAgreement(state, val) {
+    setShowAgreement(state, val:boolean) {
       state.showAgreement = val
     },
-    setUser(state, val) {
+    setUser(state, val:string) {
       state.user = val
     },
-    setShowTag(state, val) {
+    setShowTag(state, val:string) {
       state.showTag = val
     },
-    setVerify(state, val){
+    setVerify(state, val:string){
       state.verifyCode = val
     },
     loginState(state, obj) {

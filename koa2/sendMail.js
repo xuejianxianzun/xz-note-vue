@@ -10,7 +10,7 @@ async function mail(to, code) {
     from: mailConfig.auth.user, // sender address
     to: to, // list of receivers
     subject: '仙尊笔记验证码', // Subject line
-    html: `有人申请对您的账户作出修改，需要进行验证。如果不是您本人操作，请忽略此邮件。<br>验证码: <b>${code}</b><br><br>仙尊笔记` // html body
+    html: `我们需要对您的账户进行验证。如果不是您本人操作，请忽略此邮件。<br>验证码: <b>${code}</b><br><br>仙尊笔记` // html body
   })
 }
 

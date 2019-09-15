@@ -26,7 +26,7 @@ import UserMenu from './UserMenu.vue'
 import { Component, Watch, Vue } from 'vue-property-decorator'
 @Component({
   components: {
-    UserMenu: UserMenu
+    UserMenu
   }
 })
 export default class BlogHeader extends Vue {

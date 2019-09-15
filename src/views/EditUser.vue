@@ -33,7 +33,7 @@
               class="verify_form"
               size="medium"
               :model="inputVerify"
-              :rules="rules1"
+              :rules="ruleVerify"
               ref="inputVerify"
               @submit.native.prevent
             >
@@ -61,7 +61,7 @@
               class="new_form"
               size="medium"
               :model="inputNew"
-              :rules="rules2"
+              :rules="ruleNewValue"
               ref="newform"
               @submit.native.prevent
             >
@@ -98,6 +98,7 @@
 import { Component, Vue } from 'vue-property-decorator'
 import UserWrap from '../components/UserWrap.vue'
 import { pubRules } from '../Util'
+import { ElementUIComponent } from 'element-ui/types/component'
 @Component({
   components: {
     UserWrap
@@ -121,19 +122,25 @@ export default class EditUser extends Vue {
   private sendStatus: string = ''
   private sendStatus2: string = ''
 
+  // 输入验证码的表单数据
   private inputVerify: { verifyEmail: string } = {
     verifyEmail: ''
   }
+
+  // 输入新值的表单数据
   private inputNew: { val: string } = {
     val: ''
   }
 
-  private rules1: any = {
+  // 验证码的检验规则
+  private ruleVerify = {
     verifyEmail: pubRules.verifyEmail
   }
 
-  private rules2: any = {}
+  // 新输入的值的验证规则
+  private ruleNewValue: { val?: object[] } = {}
 
+  // 同时包含邮箱和密码的验证规则
   private rulesAll = {
     email: pubRules.email,
     pwd: pubRules.pwd
@@ -145,12 +152,12 @@ export default class EditUser extends Vue {
       this.field = 'email'
       this.fieldTip = '邮箱'
       this.inputType = 'text'
-      this.rules2 = { val: this.rulesAll.email }
+      this.ruleNewValue = { val: this.rulesAll.email }
     } else if (this.$route.name === 'changePwd') {
       this.field = 'pwd'
       this.fieldTip = '密码'
       this.inputType = 'password'
-      this.rules2 = { val: this.rulesAll.pwd }
+      this.ruleNewValue = { val: this.rulesAll.pwd }
     }
     this.stepTitle = ['验证邮箱', `修改${this.fieldTip}`, '完成修改']
   }
@@ -160,7 +167,7 @@ export default class EditUser extends Vue {
     this.countDown()
     this.$http({
       method: 'get',
-      url: 'http://localhost:3000/api/v2/user/profile/verification'
+      url: `${this.$store.state.apiPath}/user/profile/verification`
     })
       .then((res) => {
         this.sendStatus = '发送成功！'
@@ -192,7 +199,7 @@ export default class EditUser extends Vue {
 
   // 修改时检查输入的值
   private checkVerify() {
-    this.$refs.inputVerify.validate((valid: any) => {
+    ;(this.$refs.inputVerify as any).validate((valid: any) => {
       if (valid) {
         this.verify()
       } else {
@@ -206,7 +213,7 @@ export default class EditUser extends Vue {
   private verify() {
     this.$http({
       method: 'post',
-      url: 'http://localhost:3000/api/v2/user/profile/verification',
+      url: `${this.$store.state.apiPath}/user/profile/verification`,
       data: {
         verify: this.inputVerify.verifyEmail
       }
@@ -223,27 +230,25 @@ export default class EditUser extends Vue {
 
   // 修改时检查输入的值
   private checkForm() {
-    this.$refs.newform.validate((valid: any) => {
+    ;(this.$refs.newform as any).validate((valid: any) => {
       if (valid) {
         this.updataNew()
       } else {
-        // console.log('valid failed')
         return false
       }
     })
   }
 
-  // 进行修改
+  // 修改资料
   private updataNew() {
     this.$http({
       method: 'patch',
-      url: `http://localhost:3000/api/v2/user/profile/${this.field}`,
+      url: `${this.$store.state.apiPath}/user/profile/${this.field}`,
       data: {
         data: this.inputNew.val
       }
     })
       .then((res) => {
-        console.log(res.data)
         this.inputNew.val = ''
         this.next()
       })
