@@ -1,7 +1,8 @@
 const nodemailer = require('nodemailer')
-const mailConfig = require('./mailConfig')
+const cfg = require('./config')
+const mailConfig = cfg.mailConfig
 
-async function mail(to, code) {
+async function mail(to, html) {
   // create reusable transporter object using the default SMTP transport
   let transporter = nodemailer.createTransport(mailConfig)
 
@@ -9,8 +10,8 @@ async function mail(to, code) {
   let info = await transporter.sendMail({
     from: mailConfig.auth.user, // sender address
     to: to, // list of receivers
-    subject: '仙尊笔记验证码', // Subject line
-    html: `我们需要对您的账户进行验证。如果不是您本人操作，请忽略此邮件。<br>验证码: <b>${code}</b><br><br>仙尊笔记` // html body
+    subject: '仙尊笔记账户验证', // Subject line
+    html: html // html body
   })
 }
 

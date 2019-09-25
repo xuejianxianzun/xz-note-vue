@@ -1,3 +1,9 @@
+// 配置项
+const cfg = require('./config')
+const siteUrl = cfg.siteUrl
+const serect = cfg.serect
+
+// 引入模块
 const fs = require('fs')
 const path = require('path')
 // https://koajs.com/
@@ -13,15 +19,13 @@ const cros = require('koa2-cors')
 // 引入 jsonwebtoken
 // https://www.npmjs.com/package/jsonwebtoken
 const jwt = require('jsonwebtoken')
-const serect = 'test-test-test' // 密钥
 // 引入 bcrypt.js
 // https://github.com/dcodeIO/bcrypt.js
 const bcrypt = require('bcryptjs')
 // 引入 mysql-pro
 // https://github.com/shhhplus/mysql-promise
 const MysqlPro = require('mysql-pro')
-const DBConfig = require('./DBConfig')
-const DB = new MysqlPro(DBConfig)
+const DB = new MysqlPro(cfg.DBConfig)
 // 引入发信功能
 const mail = require('./sendMail')
 
@@ -35,7 +39,7 @@ app.use(
       // if (ctx.url === '/api/v2/user/profile/avatar') {
       //   return '*' // 允许来自所有域名请求
       // }
-      return 'http://localhost:8080'
+      return siteUrl
     },
     exposeHeaders: ['WWW-Authenticate', 'Server-Authorization'],
     maxAge: 5,
@@ -89,23 +93,42 @@ function getHash(pwd) {
 }
 
 // 生成验证码
-function getVerifyCode(length) {
-  // 贴心的去掉了容易混淆的 O 和 0 ^_-
-  const fullVerification = 'QWERTYUIPASDFGHJKLZXCVBNM123456789-_+=()!#$%^[]'
+function getVerifyCode(string, length) {
   let verification = ''
   for (let index = 0; index < length; index++) {
-    const i = parseInt(Math.random() * fullVerification.length)
-    verification += fullVerification[i]
+    const i = parseInt(Math.random() * string.length)
+    verification += string[i]
   }
   return verification
 }
 
 // 发送验证码
 async function sendVerifyCode(ctx, email, length = 6) {
-  const verification = getVerifyCode(length)
+  // 贴心的去掉了容易混淆的 O 和 0 ^_-
+  const fullVerification = 'QWERTYUIPASDFGHJKLZXCVBNM123456789-_+=()!#$%^[]'
+  const verification = getVerifyCode(fullVerification, length)
+  const html = `我们需要对您的账户进行验证。如果不是您本人操作，请忽略此邮件。<br>验证码: <b>${code}</b><br><br>仙尊笔记`
   // 发信
   try {
-    await mail(email, verification)
+    await mail(email, html)
+    return verification
+  } catch (error) {
+    // 发信出错，最可能的原因是用户的邮箱地址不存在
+    returnCode(ctx, 500)
+    return 'error'
+  }
+}
+
+// 发送注册链接
+async function sendRegistLink(ctx, email) {
+  // 生成验证链接，不包含特殊字符
+  const fullVerification = 'qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890'
+  const verification = getVerifyCode(fullVerification, 32)
+  const link = `${siteUrl}/checkregist/${verification}`
+  const html = `有人使用您的邮箱注册仙尊笔记账户。如果不是您本人操作，请忽略此邮件。<br><br>注册链接:<br><a href="${link}">${link}</a><br><br>仙尊笔记`
+  // 发信
+  try {
+    await mail(email, html)
     return verification
   } catch (error) {
     // 发信出错，最可能的原因是用户的邮箱地址不存在
@@ -159,7 +182,7 @@ function returnCode(ctx, code) {
   return result
 }
 
-// 当用户注册、登录、修改资料时，返回数据，可选是否生成新的 token
+// 当用户注册、登录、修改资料时，返回数据。
 function returnUserinfo(ctx, res, withToken) {
   // 要返回的用户信息
   const userinfo = {
@@ -170,12 +193,14 @@ function returnUserinfo(ctx, res, withToken) {
   }
   // 要返回的数据
   let bodyData = {}
+  // 在登陆时生成新的 token
   if (withToken) {
     bodyData = {
       token: jwt.sign(userinfo, serect, { expiresIn: '1h' }),
       userinfo
     }
   } else {
+    // 其他情况下不生成 token
     bodyData = {
       userinfo
     }
@@ -192,7 +217,7 @@ function returnUserinfo(ctx, res, withToken) {
 // 用户注册
 router.post('/api/v2/register', async (ctx, next) => {
   let body = ctx.request.body
-
+  // 检查是否已经有这个用户了
   let res = await DB.query(`select * from users where name = ?`, [body.user])
   // 如果结果为空，返回值是一个空数组 []
   res = JSON.parse(JSON.stringify(res))
@@ -205,18 +230,61 @@ router.post('/api/v2/register', async (ctx, next) => {
       body: []
     }
   } else {
-    let hash = getHash(body.pwd)
-    // 添加新用户
-    await DB.query(`insert into users (name, pwd, email) values (?, ?, ?)`, [
-      body.user,
-      hash,
-      body.email
-    ])
-    // 返回注册成功的数据
-    let res = await DB.query(`select * from users where name = ?`, [body.user])
-    res = JSON.parse(JSON.stringify(res))
+    // 发送注册链接
+    const verification = await sendRegistLink(ctx, body.email)
+    // 如果发信成功
+    if (verification !== 'error') {
+      // 生成密码
+      let hash = getHash(body.pwd)
+      // 把用户信息存入临时表中
+      await DB.query(
+        `insert into regist (name, pwd, email, verify, verifytime) values (?, ?, ?, ?, ?)`,
+        [
+          body.user,
+          hash,
+          body.email,
+          verification,
+          (new Date().getTime() + 10 * 60 * 1000).toString()
+        ]
+      )
+      // 返回信息
+      returnCode(ctx, 200)
+    }
+  }
+})
+
+// 验证注册链接
+router.get('/api/v2/checkregist/:key', async (ctx, next) => {
+  // 核对验证码
+  let res = await DB.query(
+    `select * from regist where verify = ?`,
+    ctx.params.key
+  )
+  res = JSON.parse(JSON.stringify(res))
+  // 如果查询不到
+  if (!res.length > 0) {
+    return returnCode(ctx, 404)
+  } else {
+    // 查询到则检查过期时间
     res = res[0]
-    returnUserinfo(ctx, res, true)
+    const notExpired = parseInt(res.verifytime) > new Date().getTime()
+    if (notExpired) {
+      // 没有过期则建立新用户
+      await DB.query(`insert into users (name, pwd, email) values (?, ?, ?)`, [
+        res.name,
+        res.pwd,
+        res.email
+      ])
+      // 删除临时表中的数据
+      DB.query(`delete from regist where verify = ?`, ctx.params.key)
+      // 返回结果
+      return returnCode(ctx, 200)
+    } else {
+      // 过期
+      // 删除临时表中的数据
+      DB.query(`delete from regist where verify = ?`, ctx.params.key)
+      return returnCode(ctx, 403)
+    }
   }
 })
 
@@ -418,7 +486,7 @@ async function updateAvatar(ctx, imgData, token) {
   const base64Data = imgData.replace(/^data:image\/\w+;base64,/, '')
   const dataBuffer = Buffer.from(base64Data, 'base64')
   const imgName = new Date().getTime().toString() + '.jpg'
-  const filePath = path.resolve(__dirname, '../public/avatar/', imgName)
+  const filePath = path.resolve(__dirname, cfg.avatarDir, imgName)
   fs.writeFile(filePath, dataBuffer, function(err) {
     if (err) {
       console.log(err)
@@ -433,7 +501,7 @@ async function updateAvatar(ctx, imgData, token) {
   if (originData.avatar) {
     const oldFile = path.resolve(
       __dirname,
-      '../public/avatar/',
+      cfg.avatarDir,
       originData.avatar
     )
     fs.access(oldFile, (err) => {
