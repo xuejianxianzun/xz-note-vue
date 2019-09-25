@@ -6,6 +6,7 @@ import Register from './views/Register.vue'
 import User from './views/User.vue'
 import EditUser from './views/EditUser.vue'
 import Found from './views/Found.vue'
+import CheckRegist from './views/CheckRegist.vue'
 
 Vue.use(Router)
 
@@ -47,6 +48,11 @@ export default new Router({
       path: '/user/foundpwd',
       name: 'foundPwd',
       component: Found
+    },
+    {
+      path: '/checkregist/:key',
+      name: 'checkregist',
+      component: CheckRegist
     }
   ]
 })

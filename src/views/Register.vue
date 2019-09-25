@@ -2,9 +2,10 @@
   <div class="register_page login_regist_page">
     <div class="login_regist_wrap">
       <div class="con">
-        <h1>用户注册</h1>
+        <h1 v-if="step === 0">用户注册</h1>
+        <h1 v-if="step === 1">即将完成</h1>
         <el-form
-          v-show="step === 0"
+          v-if="step === 0"
           class="main_form"
           :model="formData"
           :rules="rules"
@@ -70,16 +71,18 @@
             <span slot="tipText">{{ tipText }}</span>
           </Tip1>
         </el-form>
-        <div class="success_tip" v-show="step === 1">
-
-</div>
-
-        <div class="success_tip" v-show="step === 2">
-          <p class="found_tip">
-            恭喜您注册成功！
+        <div class="success_tip" v-if="step === 1">
+          <p>
+            您的账号需要验证邮箱方可使用。
+            <br>
+            我们将会向您填写的邮箱中发送一封验证邮件，请您查收。
+            <br />
+            如果您没有收到邮件，请检查它是否被放入了垃圾箱。
+            <br>
+            现在您可以关闭此页面了。
           </p>
           <div class="btn_wrap">
-            <el-button type="primary" @click="goUser()">确定</el-button>
+            <el-button type="primary" @click="step = 0">确定</el-button>
           </div>
         </div>
       </div>
@@ -102,7 +105,8 @@ import Verify from '../components/Verify.vue'
   }
 })
 export default class Register extends Vue {
-  private tipText: string = '该用户名已被使用'
+  private tipTextAll: string[] = ['该用户名已被使用', '发信失败，可能是邮箱地址错误']
+  private tipText: string = this.tipTextAll[0]
   private step: number = 0
 
   // 表单数据
@@ -113,6 +117,24 @@ export default class Register extends Vue {
     email: '',
     agree: true,
     verifyCode: ''
+  }
+
+  // 验证两次输入的密码是否一致
+  private checkPwd2 = (rule: any, value: string, callback: any) => {
+    if (value !== this.formData.pwd) {
+      callback(new Error('两次输入密码不一致!'))
+    } else {
+      callback()
+    }
+  }
+
+  // 验证同意使用协议
+  private checkAgreen = (rule: any, value: boolean, callback: any) => {
+    if (!value) {
+      callback(new Error('不同意使用协议无法进行注册!'))
+    } else {
+      callback()
+    }
   }
 
   // 验证规则
@@ -134,27 +156,9 @@ export default class Register extends Vue {
     agree: [{ validator: this.checkAgreen, trigger: 'change' }]
   }
 
-  // 验证两次输入的密码是否一致
-  private checkPwd2 = (rule: any, value: string, callback: any) => {
-    if (value !== this.formData.pwd) {
-      callback(new Error('两次输入密码不一致!'))
-    } else {
-      callback()
-    }
-  }
-
-  // 验证同意使用协议
-  private checkAgreen = (rule: any, value: string, callback: any) => {
-    if (!value) {
-      callback(new Error('不同意使用协议无法进行注册!'))
-    } else {
-      callback()
-    }
-  }
-
   // 验证表单
   private checkForm() {
-    (this.$refs.registerform as any).validate((valid: any) => {
+    ;(this.$refs.registerform as any).validate((valid: any) => {
       if (valid) {
         this.register()
       } else {
@@ -170,19 +174,24 @@ export default class Register extends Vue {
 
   // 注册
   private async register() {
-    const cfg = {
+    this.$http({
       method: 'post',
       url: `${this.$store.state.apiPath}/register`,
       data: this.formData
-    }
-    const data = await getUserProfiles.call(this, cfg)
-    if (data.error) {
-      if (data.message === 'user exists') {
-        showTip1()
-      }
-    } else {
-      this.step = 1
-    }
+    })
+      .then((res) => {
+        this.step = 1
+      })
+      .catch((err) => {
+        if (err.response.data.message === 'user exists') {
+          this.tipText = this.tipTextAll[0]
+          showTip1()
+        }
+        if (err.response.status === 500) {
+          this.tipText = this.tipTextAll[1]
+          showTip1()
+        }
+      })
   }
 
   // 返回上一页
@@ -207,17 +216,6 @@ export default class Register extends Vue {
   .see {
     color: #888;
     cursor: pointer;
-  }
-  .success_tip {
-    text-align: center;
-    color: #555;
-    font-size: 16px;
-    line-height: 1.8;
-    margin-top: 30px;
-  }
-  .btn_wrap {
-    text-align: center;
-    margin-top: 20px;
   }
 }
 </style>

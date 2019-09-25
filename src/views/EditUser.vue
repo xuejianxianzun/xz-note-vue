@@ -26,7 +26,7 @@
           <p class="tip" v-show="showInputVerify">
             请输入您在邮箱中收到的验证码。
             <br />
-            如果您未收到邮件，请检查邮件是否在垃圾箱里。
+            如果您没有收到邮件，请检查它是否被放入了垃圾箱。
           </p>
           <div class="dib" v-show="showInputVerify">
             <el-form
