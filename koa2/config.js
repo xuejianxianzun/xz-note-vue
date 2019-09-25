@@ -22,10 +22,10 @@ const DBConfig = {
 const mailConfig = {
   host: 'smtp.qq.com',
   port: 465,
-  secure: true, // true for 465, false for other ports
+  secure: true, // 是否启用 ssl
   auth: {
-    user: '1247756698@qq.com', // generated ethereal user
-    pass: 'hwekroclgqvahebc' // generated ethereal password
+    user: 'xxxx@qq.com', // 发信邮箱用户名
+    pass: 'xxxx' // 发信邮箱密码
   }
 }
 
