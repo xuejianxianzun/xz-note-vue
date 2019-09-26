@@ -15,6 +15,10 @@
 
 后台： Koa2 + MySQL + JWT。
 
+**演示网址：**
+
+[https://note.pixiv.download](https://note.pixiv.download)
+
 # 启动项目
 
 项目中同时包含前台和后台项目。后台项目文件夹 `koa2` 可以移至其他位置。
